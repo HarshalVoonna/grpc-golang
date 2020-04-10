@@ -16,7 +16,7 @@ message GreetResponse {
     string result = 1;
 }
 
-service GreetService{
+service GreetService {
     // Unary RPC : Server takes a request and sends a response : just like in REST APIs
     rpc Greet (GreetRequest) returns (GreetResponse) {};
 }
