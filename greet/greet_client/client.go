@@ -31,6 +31,8 @@ func main() {
 	doServerStreaming(c)
 
 	doClientStreaming(c)
+
+	dobidirectionalStreaming(c)
 }
 
 func doUnary(c greetpb.GreetServiceClient) {
@@ -77,7 +79,9 @@ func doServerStreaming(c greetpb.GreetServiceClient) {
 func doClientStreaming(c greetpb.GreetServiceClient) {
 	fmt.Println("Starting to do a Client Streaming LongGreet RPC")
 	reqStream, err := c.LongGreet(context.Background())
-
+	if err != nil {
+		log.Fatalf("Error while calling LongGreet RPC: %v", err)
+	}
 	for i := 0; i < 10; i++ {
 		err := reqStream.Send(&greetpb.LongGreetRequest{
 			Greeting: &greetpb.Greeting{
@@ -96,4 +100,75 @@ func doClientStreaming(c greetpb.GreetServiceClient) {
 		log.Fatalf("Error while getting Server response for LongGreet RPC: %v", err)
 	}
 	log.Printf("Response from LongGreet %v\n", resp.Result)
+}
+
+func dobidirectionalStreaming(c greetpb.GreetServiceClient) {
+	fmt.Println("Starting to do a bidirectional Streaming GreetEveryone RPC")
+	reqStream, err := c.GreetEveryone(context.Background())
+	if err != nil {
+		log.Fatalf("Error while calling GreetEveryone RPC: %v", err)
+		return
+	}
+
+	requests := []*greetpb.GreetEveryoneRequest{
+		&greetpb.GreetEveryoneRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Shreeharsha",
+			},
+		},
+		&greetpb.GreetEveryoneRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Mike",
+			},
+		},
+		&greetpb.GreetEveryoneRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Adam",
+			},
+		},
+		&greetpb.GreetEveryoneRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Joseph",
+			},
+		},
+		&greetpb.GreetEveryoneRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Tina",
+			},
+		},
+	}
+
+	waitChannel := make(chan struct{})
+	//Go routine to stream requests to Server
+	go func() {
+		for _, req := range requests {
+			log.Printf("Streaming message: %v\n", req)
+			err := reqStream.Send(req)
+			if err != nil {
+				log.Fatalf("Error while streaming request to GreetEveryone RPC: %v", err)
+				return
+			}
+			time.Sleep(time.Second * 1)
+		}
+		reqStream.CloseSend()
+	}()
+
+	//Go routine to receive streaming requests from Server
+	go func() {
+		for {
+			resp, err := reqStream.Recv()
+			if err == io.EOF {
+				break
+			} else if err != nil {
+				log.Fatalf("Error while receiving response from Server: %v", err)
+				break
+			} else {
+				log.Printf("Received message: %v\n", resp.GetResult())
+			}
+		}
+		close(waitChannel)
+	}()
+
+	//lock everything till done
+	<-waitChannel
 }
