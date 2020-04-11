@@ -28,10 +28,57 @@ message ComputeAverageResponse {
     float average_result = 1;
 }
 
+message FindMaximumRequest {
+    int32 input_number = 1;
+}
+
+message FindMaximumResponse {
+    int32 max_number = 1;
+}
+
 service CalculatorService {
+
+    /*
+    In this exercise, your goal is to implement a Sum RPC Unary API in a CalculatorService:
+
+    The function takes a Request message that has two integers, and returns a Response that represents the sum of them.
+    Remember to first implement the service definition in a .proto file, alongside the RPC messages
+    Implement the Server code first Test the server code by implementing the Client
+
+    Example:
+    The client will send two numbers (3 and 10) and the server will respond with (13)
+    */
     rpc Sum (SumRequest) returns (SumResponse) {};
 
+    /*
+    In this exercise, your goal is to implement a PrimeNumberDecomposition RPC Server Streaming API in a CalculatorService:
+    The function takes a Request message that has one integer, and returns a stream of Responses that represent the prime number decomposition of that number (see below for the algorithm).
+    Remember to first implement the service definition in a .proto file, alongside the RPC messages
+    Implement the Server code first Test the server code by implementing the Client
+
+    Example:
+    The client will send one number (120) and the server will respond with a stream of (2,2,2,3,5), because 120=2*2*2*3*5 
+    */
     rpc PrimeNumberDecomposition (PrimeNumberDecompositionRequest) returns (stream PrimeNumberDecompositionResponse) {};
 
+    /*
+    In this exercise, your goal is to implement a ComputeAverage RPC Client Streaming API in a CalculatorService:
+
+    The function takes a stream of Request message that has one integer, and returns a Response with a double that represents the computed average
+    Remember to first implement the service definition in a .proto file, alongside the RPC messages
+    Implement the Server code first test the server code by implementing the Client
+    Example:
+    The client will send a stream of number (1,2,3,4) and the server will respond with (2.5), because (1+2+3+4)/4 = 2.5 
+    */
     rpc ComputeAverage (stream ComputeAverageRequest) returns (ComputeAverageResponse) {};
+
+    /*
+    In this exercise, your goal is to implement a FindMaximum RPC Bi-Directional Streaming API in a CalculatorService:
+    The function takes a stream of Request message that has one integer, and returns a stream of Responses that represent the current maximum between all these integers
+    Remember to first implement the service definition in a .proto file, alongside the RPC messages
+    Implement the Server code first test the server code by implementing the Client
+    Example:
+    The client will send a stream of number (1,5,3,6,2,20) and the server will respond with a stream of (1,5,6,20)
+    */
+    rpc FindMaximum (stream FindMaximumRequest) returns (stream FindMaximumResponse) {}
 }

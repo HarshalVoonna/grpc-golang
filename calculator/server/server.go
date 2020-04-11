@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net"
 
 	"github.com/HarshalVoonna/grpc-golang/calculator/calculatorpb"
@@ -44,6 +45,7 @@ func (s *server) PrimeNumberDecomposition(req *calculatorpb.PrimeNumberDecomposi
 }
 
 func (s *server) ComputeAverage(stream calculatorpb.CalculatorService_ComputeAverageServer) error {
+	fmt.Printf("ComputeAverage function was invoked\n")
 	var total int32 = 0
 	var count int32 = 0
 	for {
@@ -58,6 +60,28 @@ func (s *server) ComputeAverage(stream calculatorpb.CalculatorService_ComputeAve
 		} else {
 			total += req.GetInputNumber()
 			count++
+		}
+	}
+}
+
+func (s *server) FindMaximum(stream calculatorpb.CalculatorService_FindMaximumServer) error {
+	fmt.Printf("FindMaximum function was invoked\n")
+	curMax := int32(math.MinInt32)
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			log.Fatalf("Failed to receive request from Client: %v\n", err)
+			return err
+		} else {
+			inputNumber := req.GetInputNumber()
+			if inputNumber > curMax {
+				stream.Send(&calculatorpb.FindMaximumResponse{
+					MaxNumber: inputNumber,
+				})
+				curMax = inputNumber
+			}
 		}
 	}
 }

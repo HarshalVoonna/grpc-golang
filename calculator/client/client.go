@@ -27,6 +27,8 @@ func main() {
 	primeNumberDecomposition(c)
 
 	computeAverage(c)
+
+	findMaximum(c)
 }
 
 func sum(c calculatorpb.CalculatorServiceClient) {
@@ -85,4 +87,48 @@ func computeAverage(c calculatorpb.CalculatorServiceClient) {
 		log.Fatalf("Failed to close Client-Streaming RPC: %v\n", err)
 	}
 	fmt.Printf("Computed average of numbers sent is %v\n", resp.GetAverageResult())
+}
+
+func findMaximum(c calculatorpb.CalculatorServiceClient) {
+	inputNumbers := []int32{1, 5, 3, 6, 2, 20}
+	reqStream, err := c.FindMaximum(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to send FindMaximum RPC request to Server: %v\n", err)
+		return
+	}
+
+	lockChannel := make(chan struct{})
+	// Send
+	go func() {
+		for _, num := range inputNumbers {
+			log.Println("Sending input number", num)
+			err := reqStream.Send(&calculatorpb.FindMaximumRequest{
+				InputNumber: num,
+			})
+			if err != nil {
+				log.Fatalf("Failed to stream request to Server: %v\n", err)
+				break
+			}
+			time.Sleep(time.Second * 1)
+		}
+		reqStream.CloseSend()
+	}()
+
+	//Recv
+	go func() {
+		for {
+			resp, err := reqStream.Recv()
+			if err == io.EOF {
+				break
+			} else if err != nil {
+				log.Fatalf("Failed to receive response from Server: %v\n", err)
+				break
+			} else {
+				log.Println("Max numer till now is", resp.GetMaxNumber())
+			}
+		}
+		close(lockChannel)
+	}()
+
+	<-lockChannel
 }
