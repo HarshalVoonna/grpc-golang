@@ -24,10 +24,21 @@ message GreetManyTimesResponse {
     string result = 1;
 }
 
+message LongGreetRequest {
+    Greeting greeting = 1;
+}
+
+message LongGreetResponse {
+    string result = 1;
+}
+
 service GreetService {
     // Unary RPC : Server takes a request and sends a response : just like in REST APIs
     rpc Greet (GreetRequest) returns (GreetResponse) {};
 
     // Server Streaming RPC : Client sends one request, Server keeps pushes response
     rpc GreetManyTimes (GreetManyTimesRequest) returns (stream GreetManyTimesResponse) {}; 
+
+    // Client Streaming RPC : Client sends many request to which server resoponds with one response
+    rpc LongGreet(stream LongGreetRequest) returns (LongGreetResponse) {};
 }

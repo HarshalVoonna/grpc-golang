@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strconv"
+	"time"
 
 	"github.com/HarshalVoonna/grpc-golang/greet/greetpb"
 	"google.golang.org/grpc"
@@ -27,6 +29,8 @@ func main() {
 	doUnary(c)
 
 	doServerStreaming(c)
+
+	doClientStreaming(c)
 }
 
 func doUnary(c greetpb.GreetServiceClient) {
@@ -68,5 +72,28 @@ func doServerStreaming(c greetpb.GreetServiceClient) {
 		}
 		log.Printf("Response from GreetManyTimes %v\n", msg.Result)
 	}
+}
 
+func doClientStreaming(c greetpb.GreetServiceClient) {
+	fmt.Println("Starting to do a Client Streaming LongGreet RPC")
+	reqStream, err := c.LongGreet(context.Background())
+
+	for i := 0; i < 10; i++ {
+		err := reqStream.Send(&greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Shreeharsha " + strconv.Itoa(i),
+				LastName:  "Voonna " + strconv.Itoa(i),
+			},
+		})
+		log.Printf("Sending LongGreetRequest request no. %v\n", i)
+		time.Sleep(time.Second * 2)
+		if err != nil {
+			log.Fatalf("Error while sending Client streaming request: %v", err)
+		}
+	}
+	resp, err := reqStream.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("Error while getting Server response for LongGreet RPC: %v", err)
+	}
+	log.Printf("Response from LongGreet %v\n", resp.Result)
 }
