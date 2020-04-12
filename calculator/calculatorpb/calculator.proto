@@ -36,6 +36,14 @@ message FindMaximumResponse {
     int32 max_number = 1;
 }
 
+message SquareRootRequest {
+    int32 input_number = 1;
+}
+
+message SquareRootResponse {
+    double number_root = 1;
+}
+
 service CalculatorService {
 
     /*
@@ -81,4 +89,9 @@ service CalculatorService {
     The client will send a stream of number (1,5,3,6,2,20) and the server will respond with a stream of (1,5,6,20)
     */
     rpc FindMaximum (stream FindMaximumRequest) returns (stream FindMaximumResponse) {}
+
+    //Error handling
+    // RPC will throw an error if input number is negative
+    // Error being sent is of type INVALID_ARGUMENT
+    rpc SquareRoot (SquareRootRequest) returns (SquareRootResponse) {}
 }
