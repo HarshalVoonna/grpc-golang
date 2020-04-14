@@ -40,6 +40,14 @@ message GreetEveryoneResponse {
     string result = 1;
 }
 
+message GreetWithDeadlineRequest {
+    Greeting greeting = 1;
+}
+
+message GreetWithDeadlineResponse {
+    string result = 1;
+}
+
 service GreetService {
     // Unary RPC : Server takes a request and sends a response : just like in REST APIs
     rpc Greet (GreetRequest) returns (GreetResponse) {};
@@ -52,4 +60,7 @@ service GreetService {
 
     // bi-directional Streaming RPC : Client and Server both send streaming requests to each other
     rpc GreetEveryone(stream GreetEveryoneRequest) returns (stream GreetEveryoneResponse) {};
+
+    // Unary with Deadline RPC
+    rpc GreetWithDeadline(GreetWithDeadlineRequest) returns (GreetWithDeadlineResponse) {};
 }
