@@ -32,6 +32,10 @@ func main() {
 	callUpdateBlog(c, blogID)
 	callUpdateBlog(c, "5e9ac1cc4405dc7ca7592fc2")
 	callReadBlog(c, blogID)
+
+	callDeleteBlog(c, blogID)
+	callReadBlog(c, blogID)
+	callDeleteBlog(c, "5e9ac1cc4405dc7ca7592fc2")
 }
 
 func callCreateBlog(c blogpb.BlogServiceClient) string {
@@ -45,7 +49,7 @@ func callCreateBlog(c blogpb.BlogServiceClient) string {
 		Blog: blog,
 	})
 	if err != nil {
-		log.Fatalf("Unexpected error creating Blog %v", err)
+		log.Fatalf("Unexpected error creating Blog %v\n", err)
 	}
 	log.Printf("Blog has been created %v\n", createBlogRes)
 	blogID := createBlogRes.GetBlog().GetId()
@@ -58,7 +62,7 @@ func callReadBlog(c blogpb.BlogServiceClient, blogID string) {
 		BlogId: blogID,
 	})
 	if err != nil {
-		log.Printf("Error occurred while reading: %v", err)
+		log.Printf("Error occurred while reading: %v\n", err)
 	} else {
 		log.Printf("Blog read is %v\n", readBlogRes)
 	}
@@ -76,8 +80,20 @@ func callUpdateBlog(c blogpb.BlogServiceClient, blogID string) {
 		Blog: blog,
 	})
 	if err != nil {
-		log.Printf("Error occurred while updating: %v", err)
+		log.Printf("Error occurred while updating: %v\n", err)
 	} else {
 		log.Printf("Updated blog is %v\n", updateBlogRes)
+	}
+}
+
+func callDeleteBlog(c blogpb.BlogServiceClient, blogID string) {
+	log.Println("Deleting the blog")
+	deleteBlogRes, err := c.DeleteBlog(context.Background(), &blogpb.DeleteBlogRequest{
+		BlogId: blogID,
+	})
+	if err != nil {
+		log.Printf("Error occurred while deleting: %v\n", err)
+	} else {
+		log.Printf("Deleted blog ID is %v\n", deleteBlogRes.GetBlogId())
 	}
 }
