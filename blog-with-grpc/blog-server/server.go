@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	blogpb "github.com/HarshalVoonna/grpc-golang/blog-with-grpc/blog-protobuf"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -81,7 +82,7 @@ func main() {
 
 func (*server) CreateBlog(ctx context.Context,
 	req *blogpb.CreateBlogRequest) (*blogpb.CreateBlogResponse, error) {
-	log.Println("Create Blog RPC request")
+	log.Println("Create Blog RPC request triggered")
 	blog := req.GetBlog()
 	data := blogItem{
 		AuthorID: blog.GetAuthorId(),
@@ -93,14 +94,14 @@ func (*server) CreateBlog(ctx context.Context,
 	if err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
-			fmt.Sprintf("Internal Error: %v", err),
+			fmt.Sprintf("Internal Error: %v\n", err),
 		)
 	}
 	oid, ok := res.InsertedID.(primitive.ObjectID)
 	if !ok {
 		return nil, status.Errorf(
 			codes.Internal,
-			fmt.Sprintf("Cannot convert to OID: %v", err),
+			fmt.Sprintf("Cannot convert to OID: %v\n", err),
 		)
 	}
 
@@ -110,6 +111,37 @@ func (*server) CreateBlog(ctx context.Context,
 			AuthorId: blog.GetAuthorId(),
 			Title:    blog.GetTitle(),
 			Content:  blog.GetContent(),
+		},
+	}, nil
+}
+
+func (*server) ReadBlog(ctx context.Context,
+	req *blogpb.ReadBlogRequest) (*blogpb.ReadBlogResponse, error) {
+	log.Println("Read Blog RPC request triggered")
+	blogID := req.GetBlogId()
+
+	oid, err := primitive.ObjectIDFromHex(blogID)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument,
+			fmt.Sprintf("Cannot parse ID: %v\n", err),
+		)
+	}
+
+	data := &blogItem{}
+	filter := bson.M{"_id": oid}
+	result := collection.FindOne(context.Background(), filter)
+	if err := result.Decode(data); err != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			fmt.Sprintf("Cannot find blog with specified ID: %v\n", err),
+		)
+	}
+	return &blogpb.ReadBlogResponse{
+		Blog: &blogpb.Blog{
+			Id:       blogID,
+			AuthorId: data.AuthorID,
+			Title:    data.Title,
+			Content:  data.Content,
 		},
 	}, nil
 }
