@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 
 	blogpb "github.com/HarshalVoonna/grpc-golang/blog-with-grpc/blog-protobuf"
@@ -36,6 +37,8 @@ func main() {
 	callDeleteBlog(c, blogID)
 	callReadBlog(c, blogID)
 	callDeleteBlog(c, "5e9ac1cc4405dc7ca7592fc2")
+
+	callListBlog(c)
 }
 
 func callCreateBlog(c blogpb.BlogServiceClient) string {
@@ -95,5 +98,25 @@ func callDeleteBlog(c blogpb.BlogServiceClient, blogID string) {
 		log.Printf("Error occurred while deleting: %v\n", err)
 	} else {
 		log.Printf("Deleted blog ID is %v\n", deleteBlogRes.GetBlogId())
+	}
+}
+
+func callListBlog(c blogpb.BlogServiceClient) {
+	log.Println("Listing the blog")
+	stream, err := c.ListBlog(context.Background(), &blogpb.ListBlogRequest{})
+	if err != nil {
+		log.Printf("Error occurred while deleting: %v\n", err)
+	} else {
+		for {
+			listBlogRes, err := stream.Recv()
+			if err == io.EOF {
+				break
+			} else if err != nil {
+				log.Printf("Error occurred while listing: %v\n", err)
+				break
+			} else {
+				log.Printf("Blog read from ListBlog is %v\n", listBlogRes.GetBlog())
+			}
+		}
 	}
 }

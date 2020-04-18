@@ -222,3 +222,42 @@ func (*server) DeleteBlog(ctx context.Context, req *blogpb.DeleteBlogRequest) (*
 		BlogId: blogID,
 	}, nil
 }
+
+func (*server) ListBlog(req *blogpb.ListBlogRequest,
+	stream blogpb.BlogService_ListBlogServer) error {
+	log.Println("List Blog RPC request triggered")
+	cursor, err := collection.Find(context.Background(), bson.D{})
+	if err != nil {
+		log.Printf("Unknown Internal Error: %v\n", err)
+		return status.Errorf(codes.Internal,
+			fmt.Sprintf("Unknown Internal Error: %v\n", err),
+		)
+	}
+	defer cursor.Close(context.Background())
+
+	for cursor.Next(context.Background()) {
+		data := &blogItem{}
+		if err := cursor.Decode(data); err != nil {
+			return status.Errorf(
+				codes.Internal,
+				fmt.Sprintf("Error while decoding data from MongoDB: %v\n", err),
+			)
+		}
+		stream.Send(&blogpb.ListBlogResponse{
+			Blog: &blogpb.Blog{
+				Id:       data.ID.Hex(),
+				AuthorId: data.AuthorID,
+				Title:    data.Title,
+				Content:  data.Content,
+			},
+		})
+	}
+	if err := cursor.Err(); err != nil {
+		log.Printf("Unknown Internal Error: %v\n", err)
+		return status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Unknown Internal Error: %v\n", err),
+		)
+	}
+	return nil
+}
