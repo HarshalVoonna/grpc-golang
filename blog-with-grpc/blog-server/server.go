@@ -145,3 +145,44 @@ func (*server) ReadBlog(ctx context.Context,
 		},
 	}, nil
 }
+
+func (*server) UpdateBlog(ctx context.Context,
+	req *blogpb.UpdateBlogRequest) (*blogpb.UpdateBlogResponse, error) {
+	log.Println("Update Blog RPC request triggered")
+	blog := req.GetBlog()
+	blogID := blog.GetId()
+	oid, err := primitive.ObjectIDFromHex(blogID)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument,
+			fmt.Sprintf("Cannot parse ID: %v\n", err),
+		)
+	}
+	data := &blogItem{}
+	filter := bson.M{"_id": oid}
+	result := collection.FindOne(context.Background(), filter)
+	if err := result.Decode(data); err != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			fmt.Sprintf("Cannot find blog with specified ID: %v\n", err),
+		)
+	}
+	data.AuthorID = blog.GetAuthorId()
+	data.Content = blog.GetContent()
+	data.Title = blog.GetTitle()
+	_, updateErr := collection.ReplaceOne(context.Background(), filter, data)
+	if updateErr != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Cannot update object in Mongodb: %v\n", updateErr),
+		)
+	}
+
+	return &blogpb.UpdateBlogResponse{
+		Blog: &blogpb.Blog{
+			Id:       blogID,
+			AuthorId: data.AuthorID,
+			Title:    data.Title,
+			Content:  data.Content,
+		},
+	}, nil
+}

@@ -10,6 +10,8 @@ import (
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	log.Println("Blog Client")
 
 	cc, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
@@ -26,6 +28,10 @@ func main() {
 
 	callReadBlog(c, blogID)
 	callReadBlog(c, "5e9ac1cc4405dc7ca7592fc2")
+
+	callUpdateBlog(c, blogID)
+	callUpdateBlog(c, "5e9ac1cc4405dc7ca7592fc2")
+	callReadBlog(c, blogID)
 }
 
 func callCreateBlog(c blogpb.BlogServiceClient) string {
@@ -55,5 +61,23 @@ func callReadBlog(c blogpb.BlogServiceClient, blogID string) {
 		log.Printf("Error occurred while reading: %v", err)
 	} else {
 		log.Printf("Blog read is %v\n", readBlogRes)
+	}
+}
+
+func callUpdateBlog(c blogpb.BlogServiceClient, blogID string) {
+	log.Println("Updating the blog")
+	blog := &blogpb.Blog{
+		Id:       blogID,
+		AuthorId: "Mark",
+		Title:    "GRPC and MongoDB Part (Updated)",
+		Content:  "Updated blog with GRPC and MongoDB",
+	}
+	updateBlogRes, err := c.UpdateBlog(context.Background(), &blogpb.UpdateBlogRequest{
+		Blog: blog,
+	})
+	if err != nil {
+		log.Printf("Error occurred while updating: %v", err)
+	} else {
+		log.Printf("Updated blog is %v\n", updateBlogRes)
 	}
 }
